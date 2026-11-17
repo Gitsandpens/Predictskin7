@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PredictSkin</title>
+<style>
+:root{--bg:#1f2523;--card:#262d2b;--line:#3a4440;--tx:#e9efeb;--mu:#9fb0a8;--ac:#86b9a3;--on:#14201b}
+[data-theme=light]{--bg:#f5f3ee;--card:#fbfaf6;--line:#dcd8cc;--tx:#1d2a24;--mu:#5d6d65;--ac:#2f6b52;--on:#fff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,sans-serif}
+h1,h2,h3,.logo{font-family:Georgia,serif;margin:0 0 .4em}.logo{color:var(--ac);font-size:1.7rem;font-weight:700}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:24px;margin-bottom:18px}
+.mu{color:var(--mu);font-size:.9rem}
+button,input,select{font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px 14px}
+button{cursor:pointer}button.pri{background:var(--ac);color:var(--on);border:0;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+button:disabled{opacity:.5}input{width:100%;margin:4px 0 14px}
+#auth{max-width:420px;margin:12vh auto;padding:0 16px}
+#app{display:none;grid-template-columns:230px 1fr 270px;min-height:100vh}
+nav,aside{padding:22px;border-right:1px solid var(--line)}aside{border:0;border-left:1px solid var(--line)}
+nav a{display:block;padding:9px 12px;border-radius:6px;color:var(--mu);cursor:pointer}nav a.on{background:var(--card);color:var(--tx);border-left:3px solid var(--ac)}
+main{padding:24px;max-width:860px}.drop{border:2px dashed var(--line);border-radius:10px;padding:34px;text-align:center}
+.drop img{max-width:100%;max-height:300px;border-radius:8px}.big{font:700 2.6rem Georgia,serif;text-transform:uppercase}
+.tag{color:var(--ac);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase}.warn{border-left:4px solid var(--ac);padding:10px 14px;margin-bottom:18px;background:var(--card)}
+.bar{height:8px;background:var(--line);border-radius:4px;position:relative}.bar i{position:absolute;top:-4px;width:6px;height:16px;background:var(--ac);border-radius:3px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}.hide{display:none}
+@media(max-width:900px){#app{grid-template-columns:1fr}nav,aside{border:0}}
+</style>
+</head>
+<body>
+<div id="auth">
+  <div class="logo">PredictSkin</div><p class="mu">Skin image comparison and health guidance. Educational prototype.</p>
+  <div class="card"><h2 id="atitle">Log in</h2>
+    <div id="nameBox" class="hide"><label>Name</label><input id="name"></div>
+    <label>Email</label><input id="email" type="email"><label>Password</label><input id="pw" type="password">
+    <button class="pri" style="width:100%" onclick="doAuth()" id="abtn">Log in</button>
+    <p class="mu" id="aerr" style="color:#e07a6a"></p>
+    <p class="mu"><span id="aq">New here?</span> <a href="#" onclick="flip();return false" style="color:var(--ac)" id="aflip">Create an account</a></p></div>
+  <p class="mu">Educational prototype, not a medical diagnosis. Only name, email and a hashed password are stored. Images are never saved.</p>
+</div>
+
+<div id="app">
+  <nav><div class="logo">PredictSkin</div>
+    <a class="on" onclick="show('skin',this)">Skin Analysis</a><a onclick="show('bmi',this)">Health Profile</a><a onclick="show('nut',this)">Nutrition Guide</a><a onclick="show('per',this)">Period Tracker</a><a onclick="show('hab',this)">Habit Check</a><a onclick="show('fod',this)">Food Brands</a><a onclick="show('car',this)">Soap &amp; Shampoo</a>
+    <div style="margin-top:40vh"><p class="mu">Signed in as <b id="who"></b></p>
+      <button style="width:100%;margin-bottom:8px" onclick="logout()">Log out</button>
+      <button style="width:100%" onclick="theme()">Switch theme</button></div></nav>
+  <main>
+        <section id="skin"><div class="card"><h2>Skin image analysis</h2><p class="mu">Upload a clear skin photo (JPG, PNG or WEBP, up to 10 MB).</p>
+      <div class="drop" id="drop"><div id="prev" class="mu">Drag and drop an image here, or choose one.</div><br>
+        <button onclick="f.click()">Choose image</button><input type="file" id="f" accept="image/*" class="hide"></div><br>
+      <button class="pri" id="go" disabled onclick="analyze()">Analyze skin</button> <span class="mu" id="st"></span></div>
+      <div id="res" class="card hide">
+        <div class="tag">Detected visual match</div><div class="big" id="dis"></div><hr style="border-color:var(--line)">
+        <div class="row"><div><h3>About</h3><p id="about"></p><h3>Possible cause</h3><p id="cause"></p></div>
+          <div><h3>Foods to limit</h3><p id="avoid"></p><h3>When to see a doctor</h3><p>If it persists, spreads, hurts or worries you, see a dermatologist. This is an educational prototype, not a diagnosis.</p></div></div></div></section>
+    <section id="bmi" class="hide"><div class="card"><h2>Health profile</h2><p class="mu">Used only to calculate BMI. Nothing is sent to the server.</p>
+      <div class="row"><div><label>Height (cm)</label><input id="h" type="number" oninput="bmi()"></div><div><label>Weight (kg)</label><input id="w" type="number" oninput="bmi()"></div></div></div></section>
+  <section id="nut" class="hide"><div class="card"><h2>Nutrition guide</h2><p class="mu">General suggestions only, not medical advice. Uses the height and weight from Health Profile.</p>
+<div class="row"><div><label>Goal</label><br><select id="goal"><option>Maintain weight</option><option>Lose weight</option><option>Gain weight</option></select></div>
+<div><label>Food preference</label><br><select id="diet"><option value="veg">Vegetarian</option><option value="egg">Eggetarian</option><option value="non">Non-vegetarian</option></select></div></div><br>
+<label>Allergies (these are left out)</label><div id="alg" style="margin:8px 0 16px"></div><button class="pri" onclick="nutri()">Generate guide</button></div><div id="nres"></div></section>
+<section id="per" class="hide">
+<div class="card"><h2>Period tracker</h2><p class="mu">For awareness only, not medical advice. Entries are saved to your account.</p>
+<label>First day of your latest period</label><input type="date" id="pd"><button class="pri" onclick="addP()">Log period</button><div id="pinfo" style="margin-top:14px"></div></div>
+<div class="card"><h2>Does my cycle look normal?</h2><div id="pq"></div><button class="pri" onclick="quiz()">See result</button><p id="qres" style="margin-top:14px"></p></div>
+<div class="card"><h2>My daily journal</h2><p class="mu">How was your day? Mood, energy, hormones, anything you want to remember.</p>
+<select id="jm"><option>Happy</option><option>Calm</option><option>Tired</option><option>Low</option><option>Anxious</option><option>Irritable</option></select><br><br>
+<textarea id="jt" rows="4" style="width:100%;background:var(--card);color:var(--tx);border:1px solid var(--line);border-radius:6px;padding:10px;font:inherit"></textarea><br><br>
+<button class="pri" onclick="addJ()">Save entry</button><div id="jl" style="margin-top:14px"></div></div></section>
+</main>
+  <aside><h3>Health profile</h3><div style="font:2.2rem Georgia,serif"><span id="bv">--</span> <span class="mu">BMI</span></div><b id="bc">Enter height and weight</b>
+    <div class="bar" style="margin:14px 0"><i id="bm" style="left:0"></i></div><p class="mu">BMI is a screening number only and does not diagnose any condition.</p></aside>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);let token=localStorage.pt_token,mode='login',file=null;
+const hdr=()=>({Authorization:'Bearer '+token});
+function flip(){mode=mode=='login'?'signup':'login';const s=mode=='signup';$('atitle').textContent=$('abtn').textContent=s?'Create account':'Log in';
+  $('nameBox').classList.toggle('hide',!s);$('aq').textContent=s?'Have an account?':'New here?';$('aflip').textContent=s?'Log in':'Create an account'}
+async function doAuth(){const r=await fetch('/api/'+mode,{method:'POST',headers:{'Content-Type':'application/json'},
+  body:JSON.stringify({name:$('name').value,email:$('email').value,password:$('pw').value})});const d=await r.json();
+  if(!r.ok){$('aerr').textContent=d.detail;return}token=d.token;localStorage.pt_token=token;localStorage.pt_name=d.name;enter()}
+function enter(){$('auth').style.display='none';$('app').style.display='grid';$('who').textContent=localStorage.pt_name||''}
+function logout(){localStorage.removeItem('pt_token');location.reload()}
+function theme(){const d=document.documentElement;d.dataset.theme=d.dataset.theme=='dark'?'light':'dark'}
+function show(id,a){if(id=='per')loadPer();document.querySelectorAll('main>section').forEach(s=>s.classList.toggle('hide',s.id!=id));document.querySelectorAll('nav a').forEach(x=>x.classList.remove('on'));a.classList.add('on')}
+$('f').onchange=e=>pick(e.target.files[0]);
+$('drop').ondragover=e=>e.preventDefault();$('drop').ondrop=e=>{e.preventDefault();pick(e.dataTransfer.files[0])};
+function pick(x){if(!x)return;if(x.size>10e6){$('st').textContent='File is over 10 MB';return}file=x;
+  $('prev').innerHTML='<img src="'+URL.createObjectURL(x)+'"><br>'+x.name;$('go').disabled=false;$('res').classList.add('hide')}
+async function analyze(){$('go').disabled=true;$('st').textContent='Analyzing...';const fd=new FormData();fd.append('file',file);
+  const r=await fetch('/api/analyze',{method:'POST',headers:hdr(),body:fd});
+  if(r.status==401){logout();return}const d=await r.json();$('go').disabled=false;
+  if(!r.ok){$('st').textContent=d.detail||'Something went wrong';return}$('st').textContent='';
+  $('dis').textContent=d.disease;$('about').textContent=d.about;$('cause').textContent=d.cause;$('avoid').textContent=d.avoid;$('res').classList.remove('hide')}
+function bmi(){const h=$('h').value/100,w=$('w').value;if(!h||!w)return;const b=w/(h*h);$('bv').textContent=b.toFixed(1);
+  $('bc').textContent=b<18.5?'Underweight':b<25?'Normal':b<30?'Overweight':'Obese';$('bm').style.left=Math.min(100,Math.max(0,(b-15)/25*100))+'%'}
+
+const kvGet=async k=>{const r=await fetch('/api/kv/'+k,{headers:hdr()});const d=await r.json();return d.value?JSON.parse(d.value):null};
+const kvSet=(k,v)=>fetch('/api/kv/'+k,{method:'PUT',headers:{...hdr(),'Content-Type':'application/json'},body:JSON.stringify({value:JSON.stringify(v)})});
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+// ---- nutrition guide
+const ALG=['milk','gluten','nuts','seafood','eggs'];
+$('alg').innerHTML=ALG.map(a=>'<label style="margin-right:14px"><input type="checkbox" value="'+a+'" style="width:auto;margin:0 6px 0 0">'+a+'</label>').join('');
+const MEALS={Breakfast:[["Idli with sambar","veg"],["Besan chilla with vegetables","veg"],["Poha with peanuts","veg","nuts"],["Vegetable oats upma","veg","gluten"],["Paneer paratha with curd","veg","gluten","milk"],["Egg bhurji with roti","egg","gluten","eggs"]],
+Lunch:[["Rice, dal and sabzi","veg"],["Rajma or chole with salad","veg"],["Roti, paneer sabzi and curd","veg","gluten","milk"],["Chicken curry with rice","non"],["Fish curry with rice","non","seafood"]],
+Snack:[["Fruit","veg"],["Roasted makhana","veg"],["Roasted chana","veg"],["Mixed nuts","veg","nuts"],["Lassi or milk","veg","milk"]],
+Dinner:[["Vegetable pulao with raita","veg","milk"],["Moong dal khichdi with vegetables","veg"],["Roti with dal and sabzi","veg","gluten"],["Egg curry with rice","egg","eggs"],["Grilled chicken with sauteed vegetables","non"]]};
+function nutri(){const h=+$('h').value/100,w=+$('w').value;
+  if(!h||!w){$('nres').innerHTML='<div class="card">Please enter your height and weight in Health Profile first.</div>';return}
+  const b=w/(h*h),cat=b<18.5?'Underweight':b<25?'Normal':b<30?'Overweight':'Obese',goal=$('goal').value,rank={veg:0,egg:1,non:2},ud=rank[$('diet').value],
+  no=[...document.querySelectorAll('#alg input:checked')].map(x=>x.value);let m='';
+  for(const k in MEALS){const ok=MEALS[k].filter(i=>rank[i[1]]<=ud&&!i.slice(2).some(t=>no.includes(t))).sort(()=>Math.random()-.5).slice(0,2);
+    m+='<div><h3>'+k+'</h3><ul>'+(ok.map(i=>'<li>'+i[0]+'</li>').join('')||'<li>Ask a dietitian for options</li>')+'</ul></div>'}
+  const tip=goal=='Lose weight'?'Fill half your plate with vegetables, watch portion sizes, and prefer steamed or baked food over deep fried.':goal=='Gain weight'?'Add an extra snack (fruit, nuts if not allergic, milk-based drinks if not allergic) and include protein at every meal.':'Keep balanced plates with vegetables, protein and whole grains.';
+  $('nres').innerHTML='<div class="card"><p class="tag">BMI '+b.toFixed(1)+' ('+cat+') &middot; Goal: '+goal+'</p><div class="row">'+m+'</div><h3>Tip</h3><p>'+tip+'</p><h3>Hydration</h3><p>About 2 to 2.5 litres of fluids a day, a little more in hot weather.</p><h3>Foods to limit</h3><p>Deep-fried snacks, sugary drinks, highly processed packaged foods and very large late-night meals.</p><p class="mu">BMI is only a screening number. A doctor or dietitian can give advice that fits you.</p></div>'}
+// ---- period tracker, quiz, journal
+let cyc=[],jr=[];
+async function loadPer(){cyc=await kvGet('cycle')||[];jr=await kvGet('journal')||[];drawPer();drawJ()}
+function addP(){const d=$('pd').value;if(!d)return;if(!cyc.includes(d))cyc.push(d);cyc.sort();kvSet('cycle',cyc);drawPer()}
+function drawPer(){const a=cyc.slice(-6),g=[];for(let i=1;i<a.length;i++)g.push((new Date(a[i])-new Date(a[i-1]))/864e5);
+  let t='<p><b>Logged period starts:</b> '+(a.map(esc).join(', ')||'none yet')+'</p>';
+  if(g.length){const av=Math.round(g.reduce((x,y)=>x+y)/g.length),nx=new Date(new Date(a[a.length-1]).getTime()+av*864e5).toISOString().slice(0,10);
+    t+='<p>Average cycle length: <b>'+av+' days</b> ('+(av>=21&&av<=35?'within':'outside')+' the typical 21 to 35 day range). Estimated next period: <b>'+nx+'</b> (an estimate only).</p>'}
+  else t+='<p class="mu">Log at least two period start dates to see your cycle length.</p>';$('pinfo').innerHTML=t}
+const PQ=[["How long is your usual cycle (first day of one period to the first day of the next)?","21 to 35 days","Shorter than 21 days","Longer than 35 days or very unpredictable"],
+["How many days does your period usually last?","2 to 7 days","More than 7 days","Less than 2 days"],
+["Do you need to change a pad or tampon every hour for several hours in a row?","No","Yes"],
+["Is the pain so strong that it stops you from school, work or daily life?","No","Yes"],
+["Do you have bleeding between periods or after sex?","No","Yes"],
+["Have you missed 3 or more periods in a row (and are not pregnant)?","No","Yes"]];
+$('pq').innerHTML=PQ.map((q,i)=>'<label>'+(i+1)+'. '+q[0]+'</label><br><select id="q'+i+'">'+q.slice(1).map((o,j)=>'<option value="'+j+'">'+o+'</option>').join('')+'</select><br><br>').join('');
+function quiz(){let n=0;PQ.forEach((q,i)=>{if(+$('q'+i).value>0)n++});
+  $('qres').innerHTML=n==0?'Your answers look within the typical range. Keep tracking.':n==1?'One answer is outside the typical range. If it keeps happening, mention it to a doctor.':'Several answers are outside the typical range. It may be worth talking to a doctor or gynaecologist. Seek care soon if bleeding is very heavy or you feel faint.'}
+function addJ(){const t=$('jt').value.trim();if(!t)return;jr.unshift({d:new Date().toISOString().slice(0,10),m:$('jm').value,t});jr=jr.slice(0,60);kvSet('journal',jr);$('jt').value='';drawJ()}
+function drawJ(){$('jl').innerHTML=jr.slice(0,10).map(e=>'<p><span class="tag">'+esc(e.d)+' &middot; '+esc(e.m)+'</span><br>'+esc(e.t)+'</p>').join('')}
+
+// ---- generic section builder
+function mk(id,t,intro,body,fn){const s=document.createElement('section');s.id=id;s.className='hide';
+  s.innerHTML='<div class="card"><h2>'+t+'</h2><p class="mu">'+intro+'</p>'+body+'<button class="pri" onclick="'+fn+'">See result</button></div><div id="'+id+'r"></div>';document.querySelector('main').append(s)}
+// ---- habit check
+const HQ=[["How much chocolate or sweets do you eat?",["Rarely","2 to 4 times a week","Daily or more"],"may worsen acne in some people and may raise the risk of weight gain and type 2 diabetes."],
+["How often do you drink sugary drinks (cola, packaged juice, sweet chai or coffee)?",["Rarely","A few times a week","Daily"],"may add a lot of sugar quickly, may worsen acne and may raise the long-term risk of type 2 diabetes."],
+["How often do you eat fried or junk food (chips, samosa, fast food)?",["Rarely","2 to 4 times a week","Almost daily"],"may contribute to oily skin and acne, weight gain and high cholesterol."],
+["How much water do you drink in a day?",["About 2 litres or more","1 to 2 litres","Less than 1 litre"],"may leave skin feeling dry and may add to tiredness and constipation (needs vary with heat and activity)."],
+["What is your drinking water source?",["Filtered (RO, UV or boiled)","Tap water, not filtered","Untreated (borewell, tanker, pond, river)"],"may cause stomach infections; contaminated water used for washing may irritate skin and may worsen eczema or infections in some people."],
+["How many servings of fruit and vegetables do you eat daily?",["4 or more","1 to 3","Almost none"],"may mean less fibre and fewer vitamins, which may affect skin and gut health over time."],
+["How much do you sleep at night?",["7 to 9 hours","5 to 6 hours","Under 5 hours"],"may worsen acne and eczema flares and may increase cravings."],
+["Do you use sunscreen or cover up in strong sun?",["Usually","Sometimes","Almost never"],"may raise the long-term risk of sunburn, pigmentation and skin cancers."]];
+mk('hab','Habit check','Answer honestly. This looks at long-term patterns and is not a diagnosis.',HQ.map((q,i)=>'<label>'+(i+1)+'. '+q[0]+'</label><br><select id="h'+i+'">'+q[1].map((o,j)=>'<option value="'+j+'">'+o+'</option>').join('')+'</select><br><br>').join(''),'habit()');
+function habit(){let r='',n=0;HQ.forEach((q,i)=>{const v=+$('h'+i).value;n+=v;if(v>0)r+='<li>'+(v==2?'If this continues for years, it ':'If this becomes a regular habit, it ')+q[2]+'</li>'});
+  $('habr').innerHTML='<div class="card"><h3>'+(n<=4?'Your habits look mostly healthy.':n<=9?'Some habits may add up over time.':'Several habits may add up to long-term health and skin risks.')+'</h3><ul>'+(r||'<li>Nothing stood out. Keep it up.</li>')+'</ul><p class="mu">These are general patterns that may or might apply to you, not a diagnosis. A doctor or dietitian can give personal advice.</p></div>'}
+// ---- brand sections
+function brandUI(id,t,intro,list,freqs,fn){mk(id,t,intro,list.map((b,i)=>'<div style="display:flex;gap:10px;align-items:center;margin-bottom:8px"><span style="flex:1">'+b[0]+'</span><select id="'+id+i+'">'+freqs.map((f,j)=>'<option value="'+j+'">'+f+'</option>').join('')+'</select></div>').join('')+'<br>',fn)}
+function brandRes(id,list,msgs,lab){let r='',seen={};list.forEach((b,i)=>{const v=+$(id+i).value;if(v>0){r+='<li><b>'+b[0]+'</b>: '+lab[v]+'</li>';b[1].split(',').forEach(c=>seen[c]=1)}});
+  $(id+'r').innerHTML='<div class="card"><ul>'+(r||'<li>Nothing selected.</li>')+'</ul>'+Object.keys(seen).map(c=>'<p>If this continues for a long time: '+msgs[c]+'</p>').join('')+'<p class="mu">These are general patterns that may or might apply to you, not a diagnosis. Formulas change, so always check the product label.</p></div>'}
+const FB=[["Maggi noodles","n"],["Yippee noodles","n"],["Lay's chips","f"],["Kurkure","f"],["Bingo chips","f"],["Haldiram's namkeen","f"],["Parle-G","b"],["Good Day","b"],["Oreo","b"],["Cadbury Dairy Milk","s"],["Nutella","s"],["Kissan ketchup","k"],["Maggi ketchup","k"],["Coca-Cola","d"],["Thums Up","d"],["Pepsi","d"],["Frooti","d"],["Maaza","d"],["Kellogg's Chocos","c"]];
+const FM={n:"Instant noodles are refined carbohydrate and high in sodium, so eating them often may raise blood pressure risk and crowd out vegetables and protein.",f:"Fried salty snacks may add excess salt, fat and calories, and may contribute to weight gain, high cholesterol and oily skin or acne in some people.",b:"Sweet biscuits are mostly refined flour and sugar, so eating them often may contribute to weight gain, blood sugar spikes and acne in some people.",s:"Chocolate and sweet spreads add sugar and fat; large amounts may contribute to tooth decay, weight gain and acne flare-ups in some people.",k:"Ketchup has added sugar and salt; small amounts are fine but large daily amounts may add up.",d:"Sweetened drinks may spike blood sugar and add liquid calories, which may raise the risk of weight gain and type 2 diabetes and may worsen acne.",c:"Sweetened cereals are often high in sugar and may leave you hungry soon after."};
+brandUI('fod','Food brands','Pick how often you eat each one. Leave the rest on Never.',FB,['Never','Once a week','2 to 4 times a week','Daily'],'fodGo()');
+const CB=[["Lux (soap)","s"],["Lifebuoy (soap)","s,a"],["Dettol (soap)","s,a"],["Cinthol (soap)","s"],["Santoor (soap)","s"],["Medimix (soap)","s"],["Mysore Sandal (soap)","s"],["Dove (soap)","m"],["Pears (soap)","m"],["Head & Shoulders (shampoo)","h,d"],["Clear (shampoo)","h,d"],["Clinic Plus (shampoo)","h"],["Dove (shampoo)","h"],["Pantene (shampoo)","h"],["TRESemme (shampoo)","h"],["Sunsilk (shampoo)","h"],["Indulekha (shampoo)","v"],["Himalaya (shampoo)","v"],["Patanjali Kesh Kanti (shampoo)","v"]];
+const CM={s:"Many standard soap bars are alkaline and fragranced, so daily use may dry or irritate sensitive skin, may worsen eczema, and fragrance may trigger allergic contact dermatitis in some people.",a:"Antibacterial soaps are rarely needed for everyday washing, and frequent use may strip skin oils and cause dryness.",m:"Milder, moisturising bars are usually gentler, though fragrance can still bother some people.",h:"Many shampoos use sulfate cleansers (such as SLS or SLES) and fragrance, which may dry or irritate a sensitive scalp and may trigger contact dermatitis in some people.",d:"Anti-dandruff shampoos may dry the scalp if used every day.",v:"A herbal or ayurvedic label does not guarantee a gentle product; plant extracts and fragrance can also cause allergic reactions in some people."};
+brandUI('car','Soap and shampoo','Pick how often you use each product. Leave the rest on Never.',CB,['Never','Once a week','2 to 4 times a week','Daily'],'carGo()');
+function fodGo(){brandRes("fod",FB,FM,["","Occasional, usually fine","On the higher side","Unhealthy as a regular habit"])}
+function carGo(){brandRes("car",CB,CM,["","Light use","Moderate use","Daily use, so the points below are most likely to apply"])}
+if(token)enter();
+</script>
+</body>
+</html>
